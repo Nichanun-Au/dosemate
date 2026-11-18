@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DoseMate — Smart Pillbox Companion</title>
+<style>
+  :root {
+    --bg: #F8F7F4;
+    --card: #FFFFFF;
+    --primary: #1E352F;
+    --primary-soft: #2A473F;
+    --bronze: #A68A56;
+    --bronze-bg: #F5EFE6;
+    --sage-bg: #E6EFEA;
+    --sage-txt: #234E3C;
+    --blush-bg: #F8E8E4;
+    --blush-txt: #8C3B2B;
+    --ink: #181A19;
+    --muted: #68706C;
+    --border: #E5E2DC;
+  }
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+  html, body {
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden;
+    background: #EAE7E0;
+    color: var(--ink);
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 8px 20px;
+    gap: 10px;
+  }
+  .serif { font-family: Georgia, "Times New Roman", serif; }
+
+  /* Top Control Toolbar */
+  .top-bar {
+    width: min(402px, 100%);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 16px rgba(30,53,47,0.06);
+  }
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pill-group {
+    display: inline-flex;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 2px;
+  }
+  .pill-btn {
+    border: none;
+    background: transparent;
+    padding: 4px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .pill-btn.active { background: var(--primary); color: #fff; }
+  .copy-btn {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 6px 11px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    white-space: nowrap;
+  }
+  .copy-btn:active { transform: scale(0.97); }
+  .screen-chips {
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+  .screen-chips::-webkit-scrollbar { display: none; }
+  .chip {
+    white-space: nowrap;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    padding: 4px 9px;
+    border-radius: 11px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .chip.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* True iPhone 17 Proportion (402 x 874 pt) & Zero-Bleed Double-Shell Bezel */
+  .phone {
+    width: min(402px, calc(100vw - 20px));
+    aspect-ratio: 402 / 874;
+    flex-shrink: 0;
+    background: #1C1E1D;
+    padding: 8px;
+    border-radius: 52px;
+    position: relative;
+    box-shadow: 0 24px 60px rgba(30,53,47,0.22), inset 0 0 0 1px rgba(255,255,255,0.12);
+  }
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    background: var(--bg);
+    border-radius: 44px;
+    overflow: hidden;
+    clip-path: inset(0 round 44px);
+    -webkit-clip-path: inset(0 round 44px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .status-bar {
+    width: 100%;
+    height: 42px;
+    padding: 10px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+    background: var(--bg);
+  }
+  .notch {
+    width: 98px;
+    height: 24px;
+    background: #1C1E1D;
+    border-radius: 99px;
+  }
+  .viewport {
+    flex: 1;
+    width: 100%;
+    max-width: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px 15px 22px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    background: var(--bg);
+  }
+  .viewport::-webkit-scrollbar { display: none; }
+
+  /* Seamless Bottom Area & Home Indicator */
+  .bottom-shell {
+    width: 100%;
+    background: rgba(255,255,255,0.98);
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .bottom-shell.login-mode {
+    background: var(--bg);
+    border-top: none;
+  }
+  .bottom-nav {
+    display: flex;
+    justify-content: space-around;
+    padding: 8px 4px 4px;
+  }
+  .home-indicator {
+    height: 18px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .home-indicator::after {
+    content: '';
+    width: 130px;
+    height: 4px;
+    background: #1C1E1D;
+    border-radius: 99px;
+    opacity: 0.85;
+  }
+
+  /* Cards & Controls */
+  .card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 13px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(30,53,47,0.03);
+  }
+  .hero-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    background: linear-gradient(145deg, #1E352F 0%, #27443C 100%);
+    color: #fff;
+    border-radius: 22px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 12px 28px rgba(30,53,47,0.2);
+  }
+  .hardware-card {
+    width: 100%;
+    max-width: 100%;
+    overflow: hidden;
+    background: linear-gradient(155deg, #182B26 0%, #243E37 100%);
+    color: #fff;
+    border-radius: 22px;
+    padding: 15px;
+    margin-bottom: 10px;
+    border: 1px solid rgba(166,138,86,0.35);
+  }
+  .btn-primary {
+    width: 100%;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 11px 12px;
+    border-radius: 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-sm {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    padding: 6px 11px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-bronze {
+    background: var(--bronze);
+    color: #fff;
+    border: none;
+    padding: 6px 11px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .btn-outline {
+    background: var(--card);
+    color: var(--ink);
+    border: 1px solid var(--border);
+    padding: 6px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Inputs & Responsive Grids (iPad/iPhone Safari safe) */
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    min-height: 36px;
+    display: block;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 7px 10px;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+  }
+  input[type="time"].input {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 36px;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+  }
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+  .input:focus { border-color: var(--bronze); background: #fff; }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+  .grid-2 > * { min-width: 0; max-width: 100%; }
+
+  /* 4-Column Frequency Selector Grid (จำนวนครั้ง/วัน - Zero Overflow) */
+  .freq-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
+  }
+  .freq-btn {
+    min-width: 0;
+    width: 100%;
+    padding: 7px 2px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+    transition: 0.15s;
+  }
+  .freq-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+
+  /* 7-Column Day Selector Grid */
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
+    width: 100%;
+  }
+  .day-btn {
+    min-width: 0;
+    width: 100%;
+    padding: 7px 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .day-btn.active {
+    background: var(--bronze-bg);
+    color: var(--bronze);
+    border-color: var(--bronze);
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 99px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge-sage { background: var(--sage-bg); color: var(--sage-txt); }
+  .badge-blush { background: var(--blush-bg); color: var(--blush-txt); }
+  .badge-bronze { background: var(--bronze-bg); color: var(--bronze); }
+  .badge-gray { background: var(--bg); color: var(--muted); border: 1px solid var(--border); }
+  .badge-amber { background: #FEF3C7; color: #92400E; }
+
+  .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  .flex-gap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+
+  .toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 99px;
+    background: var(--border);
+    position: relative;
+    border: none;
+    cursor: pointer;
+    transition: 0.2s;
+    flex-shrink: 0;
+  }
+  .toggle.on { background: var(--primary); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    transition: 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { transform: translateX(18px); }
+
+  /* Progress Bars */
+  .bar-track {
+    width: 100%;
+    height: 6px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .bar-track.light { background: var(--bg); }
+  .bar-fill { height: 100%; border-radius: 99px; transition: width 0.3s; }
+
+  .nav-item {
+    border: none;
+    background: transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+  }
+  .nav-item.active { color: var(--primary); font-weight: 700; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    top: 46px;
+    left: 14px;
+    right: 14px;
+    background: var(--primary);
+    color: #fff;
+    padding: 9px 12px;
+    border-radius: 13px;
+    font-size: 11px;
+    z-index: 50;
+    display: none;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+    border: 1px solid rgba(166,138,86,0.4);
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Control Toolbar -->
+<div class="top-bar">
+  <div class="top-row">
+    <div class="flex-gap">
+      <strong class="serif" style="font-size:17px;color:var(--primary)">DoseMate</strong>
+      <div class="pill-group">
+        <button id="lang-th" class="pill-btn active" onclick="setLang('th')">TH</button>
+        <button id="lang-en" class="pill-btn" onclick="setLang('en')">EN</button>
+        <button id="lang-zh" class="pill-btn" onclick="setLang('zh')">中文</button>
+      </div>
+    </div>
+    <button class="copy-btn" onclick="copyFullCode()" id="btn-copy">คัดลอกโค้ด</button>
+  </div>
+  <div class="screen-chips" id="screen-chips"></div>
+</div>
+
+<!-- Mobile Phone Frame (True iPhone 17: 402 x 874 pt) -->
+<div class="phone">
+  <div class="phone-screen">
+    <div class="status-bar">
+      <span id="clock-status">08:30</span>
+      <div class="notch"></div>
+      <span style="font-size:11px;color:var(--primary)">5G • 92%</span>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <div id="viewport" class="viewport"></div>
+
+    <div id="bottom-shell" class="bottom-shell">
+      <nav id="bottom-nav" class="bottom-nav"></nav>
+      <div class="home-indicator"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const transDict = {
+  'วิตามินซี 1000mg': { en: 'Vitamin C 1000mg', zh: '维生素C 1000mg' },
+  'พาราเซตามอล 500mg': { en: 'Paracetamol 500mg', zh: '扑热息痛 500mg' },
+  'ยาลดความดัน Amlodipine': { en: 'Amlodipine', zh: '氨氯地平 (降压药)' },
+  'น้ำมันปลา Omega-3': { en: 'Omega-3 Fish Oil', zh: '欧米伽-3 鱼油' },
+  'เมลาโทนิน 3mg': { en: 'Melatonin 3mg', zh: '褪黑素 3mg' },
+  'ยาลดกรด': { en: 'Antacid', zh: '抗酸药' },
+  '-': { en: '-', zh: '-' },
+  '1 เม็ด': { en: '1 tab', zh: '1 片' },
+  '1 แคปซูล': { en: '1 capsule', zh: '1 粒' },
+  'หลังอาหารเช้า': { en: 'After breakfast', zh: '早饭后' },
+  'หลังอาหารกลางวัน': { en: 'After lunch', zh: '午饭后' },
+  'หลังอาหารเย็น': { en: 'After dinner', zh: '晚饭后' },
+  'ก่อนนอน 30 นาที': { en: '30 mins before bed', zh: '睡前30分钟' },
+  'ดื่มน้ำตามมากๆ': { en: 'Drink plenty of water', zh: '多喝水' },
+  'ทานเมื่อมีอาการปวด/ไข้': { en: 'Take for pain/fever', zh: '发热或疼痛时服用' },
+  'ห้ามหยุดยาเอง': { en: 'Do not stop abruptly', zh: '请勿自行停药' },
+  'ช่วยบำรุงสมองและหัวใจ': { en: 'Supports brain & heart', zh: '有益心脑血管' },
+  'ช่วยให้หลับสบาย': { en: 'Helps with sleep', zh: '助眠' }
+};
+
+function loc(str) {
+  if (!str) return '';
+  if (state.lang === 'th') return str;
+  return (transDict[str] && transDict[str][state.lang]) || str;
+}
+
+const T = {
+  th: {
+    copy: 'คัดลอกโค้ด', copied: 'คัดลอกโค้ดทั้งหมดเรียบร้อย!',
+    screens: ['1. เข้าสู่ระบบ','2. หน้าหลัก','3. จัดการยา','4. ตั้งเตือน','5. กล่องยา','6. ประวัติ','7. ครอบครัว','8. ตั้งค่า'],
+    nav: ['หน้าหลัก','ยา','เตือน','ประวัติ','ตั้งค่า'],
+    login: {
+      sub: 'ผู้ช่วยจัดการกล่องยาอัจฉริยะ 5 ช่อง', email: 'อีเมลผู้ใช้งาน', pass: 'รหัสผ่าน', btn: 'เข้าสู่ระบบ',
+      reg: 'สมัครสมาชิกใหม่', forgot: 'ลืมรหัสผ่าน?',
+      forgotTitle: 'รีเซ็ตรหัสผ่าน', forgotDesc: 'กรอกอีเมลที่ลงทะเบียนไว้ ระบบจะส่งลิงก์ตั้งรหัสผ่านใหม่ให้ทันที',
+      sendReset: 'ส่งลิงก์รีเซ็ตรหัสผ่าน', resetSent: 'ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลของคุณแล้ว',
+      regTitle: 'สร้างบัญชี DoseMate ใหม่', fullName: 'ชื่อ-นามสกุล', createBtn: 'ยืนยันการสมัครสมาชิก',
+      backLogin: '← กลับไปหน้าเข้าสู่ระบบ'
+    },
+    home: {
+      hi: 'สวัสดี, คุณ Nutdhavuth', today: 'สรุปการกินยาวันนี้', doses: 'มื้อยา',
+      tapHint: 'แตะช่องยาบนหน้าปัดเพื่อทดสอบเปิดฝา/ยืนยัน',
+      next: 'ใกล้ถึงเวลา:',
+      dev: 'กล่องยา (5 ช่อง)', fam: 'ผู้ดูแล/ครอบครัว', list: 'รายการยาที่ต้องกินวันนี้',
+      open: 'เปิดช่องยาแล้ว', done: 'กินยาแล้ว', wait: 'ยังไม่กิน',
+      confirm: 'ยืนยันว่ากินยาแล้ว', confirmedMsg: 'บันทึกการยืนยันกินยาเรียบร้อย'
+    },
+    meds: {
+      title: 'จัดการข้อมูลยา', add: '+ เพิ่มยาใหม่', slot: 'ช่องที่', edit: 'แก้ไข', del: 'ลบ',
+      save: 'บันทึกข้อมูลยา', cancel: 'ยกเลิก', name: 'ชื่อยา', dose: 'ขนาดยา (เช่น 1 เม็ด)',
+      method: 'วิธีรับประทาน', note: 'คำแนะนำเพิ่มเติม'
+    },
+    rem: {
+      title: 'ตั้งเวลาแจ้งเตือน', med: 'เลือกยาที่ต้องการเตือน', time: 'เวลาแจ้งเตือน',
+      perDay: 'จำนวนครั้ง / วัน', freqOpts: ['1 ครั้ง', '2 ครั้ง', '3 ครั้ง', '4 ครั้ง'],
+      days: 'เลือกวันในสัปดาห์', dList: ['อา','จ','อ','พ','พฤ','ศ','ส'],
+      adv: 'แจ้งเตือนล่วงหน้า', advOpts: ['ตรงเวลา', '5 นาที', '10 นาที', '15 นาที'],
+      save: 'บันทึกเวลาเตือน', savedMsg: 'บันทึกเวลาแจ้งเตือนแล้ว',
+      testAlert: 'ทดสอบเสียงเตือน', testMsg: 'กำลังส่งสัญญาณเตือนไปที่กล่องยา ESP32...', del: 'ลบ',
+      activeList: 'รายการแจ้งเตือนที่ตั้งไว้'
+    },
+    dev: {
+      title: 'จัดการกล่องยา', add: '+ เชื่อมต่อใหม่', conn: 'เชื่อมต่อ ESP32 แล้ว',
+      bat: 'แบตเตอรี่คงเหลือ', oled: 'จอ OLED บนกล่องยา', slots: 'สถานะช่องยาทั้ง 5 ช่อง (Servo + Reed)',
+      lidOpen: 'ฝาเปิดอยู่ (Reed Active)', lidClosed: 'ฝาปิดสนิท (Closed)', testServo: 'ทดสอบเปิดฝา', closeLid: 'ปิดฝา',
+      remove: 'ยกเลิกการเชื่อมต่อกล่องยา'
+    },
+    hist: {
+      title: 'ประวัติการใช้ยา', rate: 'อัตราการกินยาตรงเวลา 7 วันล่าสุด',
+      chartTitle: 'กราฟความสม่ำเสมอย้อนหลัง 7 วัน (แตะแท่งกราฟเพื่อดูบันทึก)',
+      cal: 'เลือกวันที่ย้อนหลัง (ซิงค์วันที่ปัจจุบันจริง)',
+      todayTag: 'วันนี้', yestTag: 'เมื่อวาน',
+      avgResp: 'ตอบสนองเฉลี่ย',
+      filterAll: 'ทั้งหมด', filterOn: 'ตรงเวลา', filterIssue: 'ล่าช้า/ลืม',
+      log: 'บันทึกฮาร์ดแวร์วันที่',
+      lidAt: 'เปิดฝา (Reed):', eatAt: 'ยืนยันกินยา:',
+      onTime: 'ตรงเวลา', late: 'ล่าช้า', missed: 'ลืมกินยา',
+      telemetryTitle: 'รายละเอียดเซนเซอร์ฮาร์ดแวร์ (ESP32 + RTC DS3231)'
+    },
+    fam: {
+      title: 'ครอบครัวและผู้ดูแล', hint: 'แตะที่ชื่อผู้ดูแลเพื่อแก้ไขได้ทันที', add: '+ เชิญผู้ดูแล',
+      share: 'แชร์สถานะการกินยาแบบเรียลไทม์', alert: 'แจ้งเตือนผู้ดูแลอัตโนมัติเมื่อลืมกินยา',
+      perm: 'สิทธิ์:', view: 'ดูอย่างเดียว', edit: 'ดูและแก้ไขได้', save: 'บันทึก'
+    },
+    set: {
+      title: 'ตั้งค่าการใช้งาน', name: 'Nutdhavuth Meechaiyo', editProf: 'แก้ไขชื่อและสีโปรไฟล์',
+      pass: 'เปลี่ยนรหัสผ่าน', oldPass: 'รหัสผ่านปัจจุบัน', newPass: 'รหัสผ่านใหม่', confPass: 'ยืนยันรหัสผ่านใหม่',
+      savePass: 'บันทึกรหัสผ่านใหม่', passSaved: 'เปลี่ยนรหัสผ่านสำเร็จแล้ว', passMismatch: 'รหัสผ่านใหม่ไม่ตรงกัน',
+      lang: 'ภาษา (Language)', sound: 'เสียงเตือนแอป & Buzzer กล่องยา',
+      soundType: 'เสียงระฆังนุ่มนวล (Chime)', priv: 'ล็อกความเป็นส่วนตัวข้อมูลสุขภาพ', out: 'ออกจากระบบ'
+    }
+  },
+  en: {
+    copy: 'Copy Code', copied: 'Full code copied to clipboard!',
+    screens: ['1. Login','2. Home','3. Meds','4. Reminders','5. Pillbox','6. History','7. Family','8. Settings'],
+    nav: ['Home','Meds','Alerts','History','Settings'],
+    login: {
+      sub: '5-Slot Smart Pillbox Companion', email: 'Email Address', pass: 'Password', btn: 'Sign In',
+      reg: 'Create Account', forgot: 'Forgot Password?',
+      forgotTitle: 'Reset Password', forgotDesc: 'Enter your registered email to receive a password reset link.',
+      sendReset: 'Send Reset Link', resetSent: 'Reset link has been sent to your email.',
+      regTitle: 'Create DoseMate Account', fullName: 'Full Name', createBtn: 'Complete Registration',
+      backLogin: '← Back to Sign In'
+    },
+    home: {
+      hi: 'Hello, Nutdhavuth', today: "Today's Adherence", doses: 'doses',
+      tapHint: 'Tap a slot on the dial to simulate lid open / confirm',
+      next: 'Up Next:',
+      dev: 'Pillbox (5 Slots)', fam: 'Caregivers', list: "Today's Medication Schedule",
+      open: 'Lid Opened', done: 'Taken', wait: 'Pending',
+      confirm: 'Mark as Taken', confirmedMsg: 'Medication intake confirmed'
+    },
+    meds: {
+      title: 'Manage Medications', add: '+ Add Medication', slot: 'Slot', edit: 'Edit', del: 'Delete',
+      save: 'Save Medication', cancel: 'Cancel', name: 'Medication Name', dose: 'Dosage (e.g. 1 tab)',
+      method: 'Instructions', note: 'Additional Notes'
+    },
+    rem: {
+      title: 'Reminder Schedule', med: 'Select Medication', time: 'Alert Time',
+      perDay: 'Times / Day', freqOpts: ['1x / day', '2x / day', '3x / day', '4x / day'],
+      days: 'Repeat Days', dList: ['Su','Mo','Tu','We','Th','Fr','Sa'],
+      adv: 'Pre-Alert', advOpts: ['On time', '5 mins', '10 mins', '15 mins'],
+      save: 'Save Reminder', savedMsg: 'Reminder schedule saved',
+      testAlert: 'Test Buzzer', testMsg: 'Sending alert signal to ESP32 pillbox...', del: 'Delete',
+      activeList: 'Active Reminders'
+    },
+    dev: {
+      title: 'Smart Pillbox Device', add: '+ Pair Device', conn: 'ESP32 Connected',
+      bat: 'Battery Level', oled: 'Pillbox OLED Display', slots: '5-Slot Hardware Status (Servo + Reed)',
+      lidOpen: 'Lid Open (Reed Active)', lidClosed: 'Lid Closed', testServo: 'Test Open', closeLid: 'Close Lid',
+      remove: 'Disconnect Pillbox'
+    },
+    hist: {
+      title: 'Medication History', rate: '7-Day On-Time Adherence Rate',
+      chartTitle: '7-Day Adherence Trend (Tap bar to inspect)',
+      cal: 'Select Past Date (Synced with Real Calendar)',
+      todayTag: 'Today', yestTag: 'Yesterday',
+      avgResp: 'Avg. Response',
+      filterAll: 'All', filterOn: 'On-Time', filterIssue: 'Late/Missed',
+      log: 'Hardware Logs for',
+      lidAt: 'Lid Open (Reed):', eatAt: 'Confirmed:',
+      onTime: 'On-Time', late: 'Late', missed: 'Missed',
+      telemetryTitle: 'Hardware Sensor Telemetry (ESP32 + RTC DS3231)'
+    },
+    fam: {
+      title: 'Family & Caregivers', hint: 'Tap any caregiver name to edit inline', add: '+ Invite',
+      share: 'Real-Time Medication Sharing', alert: 'Alert Caregiver on Missed Dose',
+      perm: 'Access:', view: 'View Only', edit: 'Can Edit', save: 'Save'
+    },
+    set: {
+      title: 'Settings', name: 'Nutdhavuth Meechaiyo', editProf: 'Edit Name & Avatar Color',
+      pass: 'Change Password', oldPass: 'Current Password', newPass: 'New Password', confPass: 'Confirm New Password',
+      savePass: 'Update Password', passSaved: 'Password updated successfully!', passMismatch: 'New passwords do not match',
+      lang: 'Language', sound: 'App & Pillbox Buzzer Alert',
+      soundType: 'Gentle Chime', priv: 'Health Data Privacy Lock', out: 'Sign Out'
+    }
+  },
+  zh: {
+    copy: '复制代码', copied: '完整代码已复制！',
+    screens: ['1. 登录','2. 首页','3. 药品管理','4. 提醒设置','5. 智能药盒','6. 用药记录','7. 家人看护','8. 设置'],
+    nav: ['首页','药品','提醒','记录','设置'],
+    login: {
+      sub: '五格智能药盒健康助手', email: '电子邮箱', pass: '密码', btn: '登录',
+      reg: '注册新账号', forgot: '忘记密码？',
+      forgotTitle: '重置密码', forgotDesc: '输入您的注册邮箱，系统将发送密码重置链接。',
+      sendReset: '发送重置链接', resetSent: '密码重置链接已发送至您的邮箱',
+      regTitle: '创建 DoseMate 账号', fullName: '姓名', createBtn: '确认注册',
+      backLogin: '← 返回登录'
+    },
+    home: {
+      hi: '你好, Nutdhavuth', today: '今日服药概览', doses: '次',
+      tapHint: '点击上方药格模拟开盖或确认服药',
+      next: '即将服药：',
+      dev: '智能药盒 (5格)', fam: '家人看护', list: '今日待服药品清单',
+      open: '药盖已打开', done: '已服药', wait: '未服药',
+      confirm: '确认已服药', confirmedMsg: '已记录服药状态'
+    },
+    meds: {
+      title: '药品信息管理', add: '+ 添加新药品', slot: '药格', edit: '编辑', del: '删除',
+      save: '保存药品', cancel: '取消', name: '药品名称', dose: '剂量 (如 1片)',
+      method: '服用方式', note: '备注说明'
+    },
+    rem: {
+      title: '服药提醒设置', med: '选择提醒药品', time: '提醒时间',
+      perDay: '每日次数', freqOpts: ['1次/天', '2次/天', '3次/天', '4次/天'],
+      days: '重复星期', dList: ['日','一','二','三','四','五','六'],
+      adv: '提前提醒', advOpts: ['准时', '提前5分', '提前10分', '提前15分'],
+      save: '保存提醒', savedMsg: '服药提醒已保存',
+      testAlert: '测试蜂鸣器', testMsg: '正在向 ESP32 药盒发送测试信号...', del: '删除',
+      activeList: '已设置的提醒'
+    },
+    dev: {
+      title: '智能药盒管理', add: '+ 绑定新药盒', conn: 'ESP32 已连接',
+      bat: '剩余电量', oled: '药盒 OLED 屏幕预览', slots: '5格硬件状态 (舵机 + 磁簧传感器)',
+      lidOpen: '盖子已开 (Reed Active)', lidClosed: '盖子已关', testServo: '测试开盖', closeLid: '关闭药盖',
+      remove: '断开并移除此药盒'
+    },
+    hist: {
+      title: '历史用药记录', rate: '近7天按时服药率',
+      chartTitle: '近7天服药趋势（点击柱状图查看详情）',
+      cal: '选择历史日期（同步当前真实日期）',
+      todayTag: '今天', yestTag: '昨天',
+      avgResp: '平均响应',
+      filterAll: '全部', filterOn: '按时', filterIssue: '延迟/漏服',
+      log: '硬件时间轴记录：',
+      lidAt: '开盖 (Reed):', eatAt: '确认服药:',
+      onTime: '按时服药', late: '延迟服药', missed: '漏服',
+      telemetryTitle: '硬件传感器遥测详情 (ESP32 + RTC DS3231)'
+    },
+    fam: {
+      title: '家人与看护人', hint: '点击姓名即可直接修改信息', add: '+ 邀请看护',
+      share: '实时共享服药状态', alert: '漏服超时自动通知家人',
+      perm: '权限：', view: '仅查看', edit: '可编辑', save: '保存'
+    },
+    set: {
+      title: '系统设置', name: 'Nutdhavuth Meechaiyo', editProf: '修改姓名与头像颜色',
+      pass: '修改登录密码', oldPass: '当前密码', newPass: '新密码', confPass: '确认新密码',
+      savePass: '保存新密码', passSaved: '登录密码修改成功！', passMismatch: '两次输入的新密码不一致',
+      lang: '界面语言 (Language)', sound: '应用提示音与药盒蜂鸣器',
+      soundType: '柔和钟声 (Chime)', priv: '健康数据隐私锁', out: '退出登录'
+    }
+  }
+};
+
+const state = {
+  lang: 'th',
+  screen: 1, // 0:Login, 1:Home, 2:Meds, 3:Reminder, 4:Device, 5:History, 6:Family, 7:Settings
+  loginMode: 'login',
+  medFormOpen: false,
+  editMedId: null,
+  editCgId: null,
+  editProfile: false,
+  editPassword: false,
+  remForm: {
+    medId: 2,
+    time: '08:30',
+    perDay: 2,
+    days: [0,1,2,3,4,5,6],
+    advIdx: 1
+  },
+  histOffset: 0,
+  histFilter: 'all',
+  selectedTelemetry: null,
+  activeDev: 0,
+  devices: [
+    {
+      name: 'DoseMate Pro • ห้องนอน', bat: 92,
+      slots: [
+        { n: 1, med: 'วิตามินซี 1000mg', open: false, status: 'done' },
+        { n: 2, med: 'พาราเซตามอล 500mg', open: true, status: 'open' },
+        { n: 3, med: 'ยาลดความดัน Amlodipine', open: false, status: 'wait' },
+        { n: 4, med: 'น้ำมันปลา Omega-3', open: false, status: 'wait' },
+        { n: 5, med: 'เมลาโทนิน 3mg', open: false, status: 'wait' }
+      ]
+    },
+    {
+      name: 'DoseMate Travel • พกพา', bat: 78,
+      slots: [
+        { n: 1, med: 'พาราเซตามอล 500mg', open: false, status: 'wait' },
+        { n: 2, med: 'วิตามินซี 1000mg', open: false, status: 'wait' },
+        { n: 3, med: 'ยาลดกรด', open: false, status: 'wait' },
+        { n: 4, med: '-', open: false, status: 'wait' },
+        { n: 5, med: '-', open: false, status: 'wait' }
+      ]
+    }
+  ],
+  meds: [
+    { id: 1, slot: 1, name: 'วิตามินซี 1000mg', dose: '1 เม็ด', method: 'หลังอาหารเช้า', note: 'ดื่มน้ำตามมากๆ', time: '07:30', status: 'done', lidOpen: false, lidTime: '07:31:08', eatTime: '07:32:15' },
+    { id: 2, slot: 2, name: 'พาราเซตามอล 500mg', dose: '1 เม็ด', method: 'หลังอาหารเช้า', note: 'ทานเมื่อมีอาการปวด/ไข้', time: '08:30', status: 'open', lidOpen: true, lidTime: '08:28:42', eatTime: '-' },
+    { id: 3, slot: 3, name: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', method: 'หลังอาหารกลางวัน', note: 'ห้ามหยุดยาเอง', time: '12:30', status: 'wait', lidOpen: false, lidTime: '-', eatTime: '-' },
+    { id: 4, slot: 4, name: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', method: 'หลังอาหารเย็น', note: 'ช่วยบำรุงสมองและหัวใจ', time: '18:30', status: 'wait', lidOpen: false, lidTime: '-', eatTime: '-' },
+    { id: 5, slot: 5, name: 'เมลาโทนิน 3mg', dose: '1 เม็ด', method: 'ก่อนนอน 30 นาที', note: 'ช่วยให้หลับสบาย', time: '21:30', status: 'wait', lidOpen: false, lidTime: '-', eatTime: '-' }
+  ],
+  reminders: [
+    { id: 101, medName: 'วิตามินซี 1000mg', slot: 1, time: '07:30', perDay: 1, days: [1,2,3,4,5], enabled: true },
+    { id: 102, medName: 'พาราเซตามอล 500mg', slot: 2, time: '08:30', perDay: 2, days: [0,1,2,3,4,5,6], enabled: true },
+    { id: 103, medName: 'ยาลดความดัน Amlodipine', slot: 3, time: '12:30', perDay: 1, days: [0,1,2,3,4,5,6], enabled: true }
+  ],
+  caregivers: [
+    { id: 1, name: 'Nutdhavuth Meechaiyo', role: 'เจ้าของ (Owner)', perm: 'edit' },
+    { id: 2, name: 'Yunke Zhai', role: 'ครอบครัว (Family)', perm: 'view' },
+    { id: 3, name: 'นพ. สมชาย ใจดี', role: 'แพทย์ประจำตัว (Doctor)', perm: 'view' }
+  ],
+  famShare: true,
+  famAlert: true,
+  setSound: true,
+  setPriv: true,
+  avatarColor: '#1E352F'
+};
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.display = 'block';
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => { el.style.display = 'none'; }, 2400);
+}
+
+function setLang(l) {
+  state.lang = l;
+  ['th','en','zh'].forEach(k => {
+    document.getElementById('lang-' + k).classList.toggle('active', k === l);
+  });
+  document.getElementById('btn-copy').textContent = T[l].copy;
+  render();
+  updateClock();
+}
+
+function goScreen(idx) {
+  state.screen = idx;
+  if (idx === 0) state.loginMode = 'login';
+  state.editCgId = null;
+  state.medFormOpen = false;
+  state.editProfile = false;
+  state.editPassword = false;
+  const vp = document.getElementById('viewport');
+  if (vp) vp.scrollTop = 0;
+  render();
+  updateClock();
+}
+
+function updateClock() {
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const hhmm = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  const ss = pad(now.getSeconds());
+  const st = document.getElementById('clock-status');
+  if (st) st.textContent = hhmm;
+  const oled = document.getElementById('oled-time');
+  if (oled) oled.textContent = hhmm;
+  const live = document.getElementById('live-dt');
+  if (live) {
+    if (state.lang === 'th') {
+      const d = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'][now.getDay()];
+      const m = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][now.getMonth()];
+      live.textContent = `วัน${d}ที่ ${now.getDate()} ${m} ${now.getFullYear()+543} • ${hhmm}:${ss} น.`;
+    } else if (state.lang === 'zh') {
+      const w = ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
+      live.textContent = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日 ${w} • ${hhmm}:${ss}`;
+    } else {
+      live.textContent = `${now.toDateString()} • ${hhmm}:${ss}`;
+    }
+  }
+}
+
+function copyFullCode() {
+  const fullHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+  const ta = document.createElement('textarea');
+  ta.value = fullHtml;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+  showToast(T[state.lang].copied);
+}
+
+/* Interactive 5-Compartment Circular Pillbox SVG Graphic */
+function renderPillboxDial(dev, interactive) {
+  const cx = 110, cy = 110, rOuter = 94, rInner = 40;
+  let sectors = '';
+  for (let i = 0; i < 5; i++) {
+    const sl = dev.slots[i];
+    const a1 = (i * 72 - 90) * Math.PI / 180;
+    const a2 = ((i + 1) * 72 - 90) * Math.PI / 180;
+    const aMid = ((i + 0.5) * 72 - 90) * Math.PI / 180;
+
+    const x1o = cx + rOuter * Math.cos(a1), y1o = cy + rOuter * Math.sin(a1);
+    const x2o = cx + rOuter * Math.cos(a2), y2o = cy + rOuter * Math.sin(a2);
+    const x2i = cx + rInner * Math.cos(a2), y2i = cy + rInner * Math.sin(a2);
+    const x1i = cx + rInner * Math.cos(a1), y1i = cy + rInner * Math.sin(a1);
+
+    const fill = sl.open ? 'rgba(245, 158, 11, 0.28)' : sl.status === 'done' ? 'rgba(34, 197, 94, 0.22)' : 'rgba(255, 255, 255, 0.07)';
+    const stroke = sl.open ? '#FBBF24' : sl.status === 'done' ? '#4ADE80' : 'rgba(255, 255, 255, 0.22)';
+    const ledCol = sl.open ? '#FBBF24' : sl.status === 'done' ? '#4ADE80' : '#94A3B8';
+
+    const lx = cx + 67 * Math.cos(aMid), ly = cy + 67 * Math.sin(aMid);
+    const ledX = cx + 83 * Math.cos(aMid), ledY = cy + 83 * Math.sin(aMid);
+
+    sectors += `
+      <g ${interactive ? `onclick="toggleSlotDial(${i})" style="cursor:pointer"` : ''}>
+        <path d="M ${x1i} ${y1i} L ${x1o} ${y1o} A ${rOuter} ${rOuter} 0 0 1 ${x2o} ${y2o} L ${x2i} ${y2i} A ${rInner} ${rInner} 0 0 0 ${x1i} ${y1i} Z"
+              fill="${fill}" stroke="${stroke}" stroke-width="1.5"/>
+        <circle cx="${ledX}" cy="${ledY}" r="3.5" fill="${ledCol}"/>
+        <text x="${lx}" y="${ly + 4}" text-anchor="middle" fill="#FFFFFF" font-size="13" font-weight="700">${sl.n}</text>
+      </g>`;
+  }
+
+  return `
+    <svg width="200" height="200" viewBox="0 0 220 220" style="display:block;margin:0 auto;max-width:100%">
+      <circle cx="${cx}" cy="${cy}" r="102" fill="none" stroke="rgba(166,138,86,0.45)" stroke-width="1.5" stroke-dasharray="4 3"/>
+      ${sectors}
+      <circle cx="${cx}" cy="${cy}" r="36" fill="#0F1C18" stroke="#A68A56" stroke-width="2"/>
+      <text x="${cx}" y="${cy - 6}" text-anchor="middle" fill="#A68A56" font-size="8" font-weight="700" letter-spacing="1">OLED</text>
+      <text id="oled-time" x="${cx}" y="${cy + 10}" text-anchor="middle" fill="#FFFFFF" font-size="14" font-weight="700">08:30</text>
+    </svg>`;
+}
+
+/* Realistic Past 7 Days Hardware & Adherence Records anchored to Real Date */
+function getPastDaysData() {
+  const now = new Date();
+  const lang = state.lang;
+  const thDays = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+  const enDays = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const zhDays = ['周日','周一','周二','周三','周四','周五','周六'];
+  const thMonths = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const enMonths = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const templates = [
+    {
+      offset: 0, rate: 100, avgSec: '1.8 min',
+      summary: { th: 'ซิงค์เรียลไทม์วันนี้ • เปิดฝาและยืนยันตามรอบเวลา', en: 'Live today sync • Following scheduled compartments', zh: '今日实时同步 • 按计划药格进行中' },
+      logs: state.meds.slice(0, 4).map(s => ({
+        slot: s.slot, med: s.name, dose: s.dose, sched: s.time,
+        lid: s.lidTime, eat: s.eatTime,
+        status: s.status === 'done' ? 'ontime' : s.status === 'open' ? 'late' : 'ontime',
+        note: {
+          th: s.status === 'done' ? 'เปิดฝาช่อง ' + s.slot + ' (Reed Switch) • ยืนยันผ่านแอปเรียบร้อย' : s.status === 'open' ? 'ตรวจพบฝาเปิดค้างอยู่ (Reed Active) • รอกดยืนยันกินยา' : 'รอถึงเวลาแจ้งเตือนรอบถัดไป',
+          en: s.status === 'done' ? 'Slot ' + s.slot + ' opened (Reed Switch) • Confirmed via App' : s.status === 'open' ? 'Lid currently open (Reed Active) • Awaiting confirmation' : 'Scheduled for upcoming reminder',
+          zh: s.status === 'done' ? '第 ' + s.slot + ' 格已开盖 (Reed) • 已确认服药' : s.status === 'open' ? '检测到药盖开启 (Reed Active) • 等待确认' : '等待下一时段提醒'
+        },
+        telemetry: { dur: s.status === 'done' ? '4.1s' : 'Open', servo: '90°', rtc: 'Synced', caregiver: 'Not Required' }
+      }))
+    },
+    {
+      offset: -1, rate: 100, avgSec: '1.5 min',
+      summary: { th: 'กินยาครบทั้ง 4 มื้อ (100%) • เปิดฝาตรงเวลาทุกช่อง', en: 'All 4 doses taken on time (100%) • Zero missed alerts', zh: '昨日4剂全部按时完成 (100%) • 无漏服记录' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:30:42', eat: '07:31:05', status: 'ontime',
+          note: { th: 'เปิดฝาหลังเสียงเตือน 42 วินาที • กดปุ่มยืนยันบนจอ OLED', en: 'Opened 42s after chime • Confirmed via OLED button', zh: '响铃后42秒开盖 • 通过OLED按键确认' },
+          telemetry: { dur: '3.8s', servo: '90°', rtc: '26.4°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:31:15', eat: '08:31:48', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 (Reed Switch) • ใช้เวลาหยิบยา 3.5 วินาที', en: 'Slot 2 lid opened (Reed) • Lid open duration 3.5s', zh: '2号格开盖 (Reed) • 开盖取药耗时 3.5秒' },
+          telemetry: { dur: '3.5s', servo: '90°', rtc: '26.5°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:32:10', eat: '12:32:40', status: 'ontime',
+          note: { th: 'เปิดฝาหลังอาหารกลางวัน • ปิดฝาสนิท (Reed Closed)', en: 'Opened after lunch • Lid properly sealed (Reed Closed)', zh: '午餐后按时开盖 • 药盖已严密闭合' },
+          telemetry: { dur: '4.4s', servo: '90°', rtc: '27.1°C', caregiver: 'Synced' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '18:31:04', eat: '18:31:30', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ซิงค์บันทึกขึ้นคลาวด์ให้ผู้ดูแลเรียบร้อย', en: 'On-time evening dose • Synced to caregiver feed', zh: '晚间按时服药 • 已实时同步给看护人' },
+          telemetry: { dur: '3.9s', servo: '90°', rtc: '26.2°C', caregiver: 'Synced' } }
+      ]
+    },
+    {
+      offset: -2, rate: 75, avgSec: '6.8 min',
+      summary: { th: 'กินยาครบ 4/4 มื้อ • มื้อเที่ยงเปิดฝาช้ากว่ากำหนด 24 นาที (กดเลื่อนเตือน)', en: '4/4 doses taken • Lunch dose delayed 24 mins (Snoozed twice)', zh: '完成 4/4 剂 • 午间服药延迟24分钟（曾点击稍后提醒）' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:31:50', eat: '07:32:12', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ไฟ LED สีเขียวดับลงหลังปิดฝา', en: 'On-time opening • Green LED turned off after closing', zh: '按时开盖 • 关盖后绿色LED指示灯熄灭' },
+          telemetry: { dur: '4.0s', servo: '90°', rtc: '26.1°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:33:05', eat: '08:33:30', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 ปกติ • ยืนยันกินยาผ่านแอปมือถือ', en: 'Normal Slot 2 opening • Confirmed via mobile app', zh: '2号格正常开盖 • 通过手机App确认' },
+          telemetry: { dur: '3.6s', servo: '90°', rtc: '26.3°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:54:18', eat: '12:55:02', status: 'late',
+          note: { th: 'กดเลื่อนเตือน (Snooze 10 นาที) 2 ครั้ง • เปิดฝาช้า 24 นาที', en: 'Snoozed 10 mins twice • Opened 24 mins behind schedule', zh: '点击延迟提醒两次 • 较计划时间晚24分钟开盖' },
+          telemetry: { dur: '5.1s', servo: '90°', rtc: '27.4°C', caregiver: 'Late Notice Sent' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '18:32:11', eat: '18:32:39', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ปิดฝาสนิทสมบูรณ์', en: 'On-time opening • Lid closed securely', zh: '晚间按时开盖 • 药盖闭合正常' },
+          telemetry: { dur: '4.2s', servo: '90°', rtc: '26.0°C', caregiver: 'Synced' } }
+      ]
+    },
+    {
+      offset: -3, rate: 75, avgSec: '2.1 min',
+      summary: { th: 'กินยา 3/4 มื้อ • ลืมทานมื้อค่ำ (ระบบส่งแจ้งเตือนถึงคุณ Yunke Zhai)', en: '3/4 doses taken • Missed evening dose (Alert sent to Yunke Zhai)', zh: '完成 3/4 剂 • 晚间漏服（系统已自动通知 Yunke Zhai）' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:30:55', eat: '07:31:18', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ใช้เวลาเปิดฝา 3.7 วินาที', en: 'On-time opening • Lid open duration 3.7s', zh: '按时开盖 • 开盖耗时 3.7秒' },
+          telemetry: { dur: '3.7s', servo: '90°', rtc: '25.9°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:31:40', eat: '08:32:05', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 เรียบร้อย • กดปุ่มยืนยันบนกล่องยา', en: 'Slot 2 opened • Confirmed on pillbox OLED button', zh: '2号格已开盖 • 通过药盒按键确认' },
+          telemetry: { dur: '4.1s', servo: '90°', rtc: '26.2°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:34:12', eat: '12:34:45', status: 'ontime',
+          note: { th: 'เปิดฝาหลังอาหารเที่ยง • ปิดฝาสนิท', en: 'Opened after lunch • Lid closed properly', zh: '午餐后开盖 • 闭合正常' },
+          telemetry: { dur: '4.5s', servo: '90°', rtc: '26.8°C', caregiver: 'Synced' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '-', eat: '-', status: 'missed',
+          note: { th: 'ไม่พบการเปิดฝาภายใน 60 นาที • ส่งแจ้งเตือนถึงผู้ดูแล (คุณ Yunke Zhai)', en: 'No lid opening detected within 60m • Alert sent to Yunke Zhai', zh: '超时60分钟未检测到开盖 • 已向看护人发送漏服提醒' },
+          telemetry: { dur: '0.0s (Closed)', servo: '0° (Locked)', rtc: '25.8°C', caregiver: 'Alert Sent (19:30)' } }
+      ]
+    },
+    {
+      offset: -4, rate: 100, avgSec: '1.2 min',
+      summary: { th: 'กินยาครบทั้ง 4 มื้อ (100%) • ตอบสนองหลังเสียงเตือนเร็วที่สุดในสัปดาห์', en: 'All 4 doses on time (100%) • Fastest alert response this week', zh: '4剂全部按时完成 (100%) • 本周最快响应记录' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:30:28', eat: '07:30:50', status: 'ontime',
+          note: { th: 'เปิดฝาภายใน 28 วินาทีหลังเสียงเตือน', en: 'Opened within 28s of morning chime', zh: '早间响铃后28秒内开盖' },
+          telemetry: { dur: '3.4s', servo: '90°', rtc: '26.0°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:31:02', eat: '08:31:25', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 ตรงเวลา • ปิดฝาสนิท', en: 'Slot 2 opened on time • Properly closed', zh: '2号格按时开盖 • 闭合正常' },
+          telemetry: { dur: '3.9s', servo: '90°', rtc: '26.3°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:31:19', eat: '12:31:44', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ยืนยันกินยาผ่านแอป', en: 'On-time opening • Confirmed via App', zh: '按时开盖 • App确认服药' },
+          telemetry: { dur: '4.1s', servo: '90°', rtc: '27.0°C', caregiver: 'Synced' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '18:30:49', eat: '18:31:12', status: 'ontime',
+          note: { th: 'เปิดฝาตรงเวลา • ปิดฝาสนิท (Reed Closed)', en: 'On-time evening dose • Lid sealed', zh: '晚间按时开盖 • 严密闭合' },
+          telemetry: { dur: '3.6s', servo: '90°', rtc: '26.1°C', caregiver: 'Synced' } }
+      ]
+    },
+    {
+      offset: -5, rate: 100, avgSec: '2.0 min',
+      summary: { th: 'กินยาครบทั้ง 4 มื้อ (100%) • ซิงค์ข้อมูลผ่าน Wi-Fi สำเร็จทุกมื้อ', en: 'All 4 doses taken on time (100%) • Cloud sync verified', zh: '4剂全部按时完成 (100%) • 云端同步成功' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:32:05', eat: '07:32:30', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 1 ตรงเวลา', en: 'Slot 1 opened on schedule', zh: '1号格按时开盖' },
+          telemetry: { dur: '4.0s', servo: '90°', rtc: '26.2°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:31:50', eat: '08:32:14', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 ตรงเวลา', en: 'Slot 2 opened on schedule', zh: '2号格按时开盖' },
+          telemetry: { dur: '3.8s', servo: '90°', rtc: '26.4°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:32:40', eat: '12:33:05', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 3 ตรงเวลา', en: 'Slot 3 opened on schedule', zh: '3号格按时开盖' },
+          telemetry: { dur: '4.3s', servo: '90°', rtc: '26.9°C', caregiver: 'Synced' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '18:31:33', eat: '18:32:01', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 4 ตรงเวลา', en: 'Slot 4 opened on schedule', zh: '4号格按时开盖' },
+          telemetry: { dur: '3.9s', servo: '90°', rtc: '26.1°C', caregiver: 'Synced' } }
+      ]
+    },
+    {
+      offset: -6, rate: 80, avgSec: '4.9 min',
+      summary: { th: 'กินยาครบ 4/4 มื้อ • มื้อเช้าเปิดฝาช้ากว่ากำหนด 16 นาที', en: '4/4 doses taken • Morning dose opened 16 mins late', zh: '完成 4/4 剂 • 早间服药延迟16分钟' },
+      logs: [
+        { slot: 1, med: 'วิตามินซี 1000mg', dose: '1 เม็ด', sched: '07:30', lid: '07:46:12', eat: '07:46:40', status: 'late',
+          note: { th: 'แจ้งเตือนซ้ำครั้งที่ 1 • เปิดฝาช้ากว่ากำหนด 16 นาที', en: '1st repeat alert triggered • Opened 16 mins late', zh: '触发第1次重复提醒 • 延迟16分钟开盖' },
+          telemetry: { dur: '4.7s', servo: '90°', rtc: '25.8°C', caregiver: 'Synced' } },
+        { slot: 2, med: 'พาราเซตามอล 500mg', dose: '1 เม็ด', sched: '08:30', lid: '08:31:10', eat: '08:31:35', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 2 ตรงเวลา', en: 'Slot 2 opened on schedule', zh: '2号格按时开盖' },
+          telemetry: { dur: '3.7s', servo: '90°', rtc: '26.1°C', caregiver: 'Synced' } },
+        { slot: 3, med: 'ยาลดความดัน Amlodipine', dose: '1 เม็ด', sched: '12:30', lid: '12:31:55', eat: '12:32:20', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 3 ตรงเวลา', en: 'Slot 3 opened on schedule', zh: '3号格按时开盖' },
+          telemetry: { dur: '4.2s', servo: '90°', rtc: '26.8°C', caregiver: 'Synced' } },
+        { slot: 4, med: 'น้ำมันปลา Omega-3', dose: '1 แคปซูล', sched: '18:30', lid: '18:31:22', eat: '18:31:48', status: 'ontime',
+          note: { th: 'เปิดฝาช่อง 4 ตรงเวลา', en: 'Slot 4 opened on schedule', zh: '4号格按时开盖' },
+          telemetry: { dur: '3.9s', servo: '90°', rtc: '26.0°C', caregiver: 'Synced' } }
+      ]
+    }
+  ];
+
+  return templates.slice().reverse().map(item => {
+    const d = new Date(now);
+    d.setDate(now.getDate() + item.offset);
+    const dayNum = d.getDate();
+    const dow = d.getDay();
+    let shortDay = lang === 'th' ? thDays[dow] : lang === 'zh' ? zhDays[dow] : enDays[dow];
+    if (item.offset === 0) shortDay = T[lang].hist.todayTag;
+    if (item.offset === -1) shortDay = T[lang].hist.yestTag;
+
+    const fullDate = lang === 'th'
+      ? `${dayNum} ${thMonths[d.getMonth()]} ${d.getFullYear() + 543}`
+      : lang === 'zh'
+      ? `${d.getFullYear()}年${d.getMonth() + 1}月${dayNum}日`
+      : `${enMonths[d.getMonth()]} ${dayNum}, ${d.getFullYear()}`;
+    return { ...item, dayNum, shortDay, fullDate };
+  });
+}
+
+/* Actions */
+function toggleSlotDial(idx) {
+  const sl = state.devices[state.activeDev].slots[idx];
+  const m = state.meds.find(x => x.slot === sl.n);
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+
+  if (sl.status === 'wait') {
+    sl.open = true; sl.status = 'open';
+    if (m) { m.status = 'open'; m.lidOpen = true; m.lidTime = ts; }
+  } else if (sl.status === 'open') {
+    sl.open = false; sl.status = 'done';
+    if (m) { m.status = 'done'; m.lidOpen = false; m.eatTime = ts; }
+    showToast(T[state.lang].home.confirmedMsg);
+  } else {
+    sl.open = false; sl.status = 'wait';
+    if (m) { m.status = 'wait'; m.lidOpen = false; m.lidTime = '-'; m.eatTime = '-'; }
+  }
+  render();
+  updateClock();
+}
+
+function confirmMed(id) {
+  const m = state.meds.find(x => x.id === id);
+  if (m) {
+    m.status = 'done';
+    m.lidOpen = false;
+    const now = new Date();
+    m.eatTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    const sl = state.devices[state.activeDev].slots.find(s => s.n === m.slot);
+    if (sl) { sl.open = false; sl.status = 'done'; }
+    showToast(T[state.lang].home.confirmedMsg);
+    render();
+    updateClock();
+  }
+}
+
+function saveMedForm() {
+  const slot = parseInt(document.getElementById('f-slot').value, 10);
+  const name = document.getElementById('f-name').value.trim();
+  const dose = document.getElementById('f-dose').value.trim() || '1 เม็ด';
+  const method = document.getElementById('f-method').value.trim() || 'หลังอาหาร';
+  const note = document.getElementById('f-note').value.trim();
+  if (!name) return;
+
+  if (state.editMedId) {
+    const m = state.meds.find(x => x.id === state.editMedId);
+    if (m) Object.assign(m, { slot, name, dose, method, note });
+  } else {
+    state.meds.push({
+      id: Date.now(), slot, name, dose, method, note, time: '09:00', status: 'wait', lidOpen: false, lidTime: '-', eatTime: '-'
+    });
+  }
+  state.medFormOpen = false;
+  state.editMedId = null;
+  render();
+}
+
+function deleteMed(id) {
+  state.meds = state.meds.filter(x => x.id !== id);
+  render();
+}
+
+function setFreq(val) {
+  state.remForm.perDay = val;
+  render();
+}
+
+function toggleDay(dIdx) {
+  const i = state.remForm.days.indexOf(dIdx);
+  if (i >= 0) {
+    if (state.remForm.days.length > 1) state.remForm.days.splice(i, 1);
+  } else {
+    state.remForm.days.push(dIdx);
+  }
+  state.remForm.days.sort();
+  render();
+}
+
+function triggerTestAlert() {
+  showToast(T[state.lang].rem.testMsg);
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch (e) {}
+}
+
+function saveReminder() {
+  const medId = parseInt(document.getElementById('rem-med').value, 10);
+  const time = document.getElementById('rem-time').value || '08:30';
+  const med = state.meds.find(m => m.id === medId) || state.meds[0];
+  state.reminders.unshift({
+    id: Date.now(),
+    medName: med ? med.name : 'Medication',
+    slot: med ? med.slot : 1,
+    time,
+    perDay: state.remForm.perDay,
+    days: [...state.remForm.days],
+    enabled: true
+  });
+  showToast(T[state.lang].rem.savedMsg);
+  render();
+}
+
+function toggleReminder(id) {
+  const r = state.reminders.find(x => x.id === id);
+  if (r) r.enabled = !r.enabled;
+  render();
+}
+
+function deleteReminder(id) {
+  state.reminders = state.reminders.filter(x => x.id !== id);
+  render();
+}
+
+function toggleLidHardware(idx) {
+  const sl = state.devices[state.activeDev].slots[idx];
+  sl.open = !sl.open;
+  sl.status = sl.open ? 'open' : 'wait';
+  const m = state.meds.find(x => x.slot === sl.n);
+  const now = new Date();
+  const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  if (m) {
+    m.lidOpen = sl.open;
+    m.status = sl.open ? 'open' : 'wait';
+    m.lidTime = sl.open ? ts : '-';
+  }
+  render();
+  updateClock();
+}
+
+function addDevice() {
+  const n = state.devices.length + 1;
+  state.devices.push({
+    name: `DoseMate Box #${n}`,
+    bat: 100,
+    slots: [1,2,3,4,5].map(s => ({ n: s, med: '-', open: false, status: 'wait' }))
+  });
+  state.activeDev = state.devices.length - 1;
+  render();
+  updateClock();
+}
+
+function removeDev() {
+  if (state.devices.length > 1) {
+    state.devices.splice(state.activeDev, 1);
+    state.activeDev = 0;
+    render();
+    updateClock();
+  }
+}
+
+function saveCg(id) {
+  const c = state.caregivers.find(x => x.id === id);
+  if (c) {
+    c.name = document.getElementById(`cg-n-${id}`).value || c.name;
+    c.role = document.getElementById(`cg-r-${id}`).value || c.role;
+    c.perm = document.getElementById(`cg-p-${id}`).value;
+  }
+  state.editCgId = null;
+  render();
+}
+
+function addCaregiver() {
+  const newId = Date.now();
+  const defName = state.lang === 'th' ? 'ผู้ดูแลใหม่' : state.lang === 'zh' ? '新看护人' : 'New Caregiver';
+  const defRole = state.lang === 'th' ? 'สมาชิกครอบครัว' : state.lang === 'zh' ? '家庭成员' : 'Family Member';
+  state.caregivers.push({ id: newId, name: defName, role: defRole, perm: 'view' });
+  state.editCgId = newId;
+  render();
+}
+
+function saveNewPassword() {
+  const nw = document.getElementById('pw-new').value;
+  const cf = document.getElementById('pw-conf').value;
+  if (!nw || nw !== cf) {
+    showToast(T[state.lang].set.passMismatch);
+    return;
+  }
+  state.editPassword = false;
+  showToast(T[state.lang].set.passSaved);
+  render();
+}
+
+/* Renderers */
+function renderTopChips() {
+  const d = T[state.lang];
+  document.getElementById('screen-chips').innerHTML = d.screens
+    .map((label, i) => `<button class="chip ${state.screen === i ? 'active' : ''}" onclick="goScreen(${i})">${label}</button>`)
+    .join('');
+}
+
+function renderBottomNav() {
+  const shellEl = document.getElementById('bottom-shell');
+  const navEl = document.getElementById('bottom-nav');
+  if (state.screen === 0) {
+    shellEl.classList.add('login-mode');
+    navEl.style.display = 'none';
+    return;
+  }
+  shellEl.classList.remove('login-mode');
+  navEl.style.display = 'flex';
+  const d = T[state.lang];
+  const map = [
+    { idx: 1, icon: '⌂', label: d.nav[0] },
+    { idx: 2, icon: '💊', label: d.nav[1] },
+    { idx: 3, icon: '⏰', label: d.nav[2] },
+    { idx: 5, icon: '🗓️', label: d.nav[3] },
+    { idx: 7, icon: '⚙', label: d.nav[4] }
+  ];
+  navEl.innerHTML = map.map(item => `
+    <button class="nav-item ${state.screen === item.idx ? 'active' : ''}" onclick="goScreen(${item.idx})">
+      <span style="font-size:15px;line-height:1">${item.icon}</span>
+      <span>${item.label}</span>
+    </button>
+  `).join('');
+}
+
+function renderScreen() {
+  const d = T[state.lang];
+  const vp = document.getElementById('viewport');
+  const dev = state.devices[state.activeDev];
+
+  // 0. Login / Forgot Password / Register
+  if (state.screen === 0) {
+    const L = d.login;
+    const logoSvg = `
+      <svg width="64" height="64" viewBox="0 0 80 80" fill="none" style="margin:0 auto 8px;display:block">
+        <circle cx="40" cy="40" r="35" fill="#1E352F" stroke="#A68A56" stroke-width="2"/>
+        <circle cx="40" cy="40" r="13" fill="#0F1C18" stroke="#A68A56" stroke-width="1.5"/>
+        <line x1="40" y1="5" x2="40" y2="27" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <line x1="73" y1="29" x2="52" y2="36" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <line x1="61" y1="68" x2="48" y2="51" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <line x1="19" y1="68" x2="32" y2="51" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <line x1="7" y1="29" x2="28" y2="36" stroke="rgba(255,255,255,0.28)" stroke-width="1.5"/>
+        <circle cx="40" cy="15" r="3" fill="#4ADE80"/>
+        <circle cx="62" cy="34" r="3" fill="#FBBF24"/>
+        <circle cx="53" cy="59" r="3" fill="#A68A56"/>
+        <circle cx="27" cy="59" r="3" fill="#A68A56"/>
+        <circle cx="18" cy="34" r="3" fill="#A68A56"/>
+      </svg>`;
+
+    if (state.loginMode === 'forgot') {
+      vp.innerHTML = `
+        <div style="padding-top:16px">
+          <button class="btn-outline" onclick="state.loginMode='login';render()" style="margin-bottom:14px">${L.backLogin}</button>
+          <div style="text-align:center;margin-bottom:12px">
+            ${logoSvg}
+            <h2 class="serif" style="font-size:23px;color:var(--primary)">${L.forgotTitle}</h2>
+            <p style="font-size:12px;color:var(--muted);margin-top:4px">${L.forgotDesc}</p>
+          </div>
+          <div class="card">
+            <label class="field-label">${L.email}</label>
+            <input class="input" type="email" value="Nutdhavuth Meechaiyo@lamduan.mfu.ac.th" style="margin-bottom:14px">
+            <button class="btn-primary" onclick="showToast('${L.resetSent}');state.loginMode='login';render()">${L.sendReset}</button>
+          </div>
+        </div>`;
+      return;
+    }
+    if (state.loginMode === 'reg') {
+      vp.innerHTML = `
+        <div style="padding-top:12px">
+          <button class="btn-outline" onclick="state.loginMode='login';render()" style="margin-bottom:12px">${L.backLogin}</button>
+          <div style="text-align:center;margin-bottom:10px">
+            ${logoSvg}
+            <h2 class="serif" style="font-size:22px;color:var(--primary)">${L.regTitle}</h2>
+          </div>
+          <div class="card">
+            <label class="field-label">${L.fullName}</label>
+            <input class="input" type="text" placeholder="Nutdhavuth Meechaiyo" style="margin-bottom:10px">
+            <label class="field-label">${L.email}</label>
+            <input class="input" type="email" placeholder="name@example.com" style="margin-bottom:10px">
+            <label class="field-label">${L.pass}</label>
+            <input class="input" type="password" placeholder="••••••••" style="margin-bottom:14px">
+            <button class="btn-primary" onclick="goScreen(1)">${L.createBtn}</button>
+          </div>
+        </div>`;
+      return;
+    }
+    vp.innerHTML = `
+      <div style="padding-top:18px;text-align:center;margin-bottom:16px">
+        ${logoSvg}
+        <h1 class="serif" style="font-size:30px;color:var(--primary)">DoseMate</h1>
+        <p style="font-size:12px;color:var(--muted);margin-top:2px">${L.sub}</p>
+      </div>
+      <div class="card">
+        <label class="field-label">${L.email}</label>
+        <input class="input" type="email" value="Nutdhavuth Meechaiyo@lamduan.mfu.ac.th" style="margin-bottom:10px">
+        <div class="flex-between" style="margin-bottom:4px">
+          <label class="field-label" style="margin:0">${L.pass}</label>
+          <button type="button" style="border:none;background:transparent;color:var(--bronze);font-size:11px;font-weight:600;cursor:pointer" onclick="state.loginMode='forgot';render()">${L.forgot}</button>
+        </div>
+        <input class="input" type="password" value="••••••••" style="margin-bottom:14px">
+        <button class="btn-primary" onclick="goScreen(1)">${L.btn}</button>
+        <div style="text-align:center;margin-top:12px">
+          <button class="btn-outline" onclick="state.loginMode='reg';render()">${L.reg}</button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // 1. Home Dashboard
+  if (state.screen === 1) {
+    const H = d.home;
+    const doneCount = state.meds.filter(m => m.status === 'done').length;
+    const total = state.meds.length;
+    const pct = total ? Math.round((doneCount / total) * 100) : 0;
+
+    vp.innerHTML = `
+      <div style="margin-bottom:10px">
+        <div id="live-dt" style="font-size:11px;color:var(--muted);font-weight:500"></div>
+        <div class="flex-between" style="margin-top:2px">
+          <h2 class="serif" style="font-size:22px;color:var(--primary)">${H.hi}</h2>
+          <span class="badge badge-sage">● ESP32 • ${dev.bat}%</span>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom:10px">
+        <div class="card flex-between" style="margin:0;padding:10px 11px;cursor:pointer" onclick="goScreen(4)">
+          <div style="min-width:0">
+            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${H.dev}</div>
+            <div style="font-size:10px;color:var(--sage-txt);font-weight:600">● ${dev.name.split('•')[0]}</div>
+          </div>
+          <span style="color:var(--muted);font-size:15px">›</span>
+        </div>
+        <div class="card flex-between" style="margin:0;padding:10px 11px;cursor:pointer" onclick="goScreen(6)">
+          <div style="min-width:0">
+            <div style="font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${H.fam}</div>
+            <div style="font-size:10px;color:var(--bronze);font-weight:600">${state.caregivers.length} Caregivers</div>
+          </div>
+          <span style="color:var(--muted);font-size:15px">›</span>
+        </div>
+      </div>
+
+      <div class="hero-card">
+        <div class="flex-between" style="margin-bottom:6px">
+          <div>
+            <div style="font-size:11px;opacity:0.8">${H.today}</div>
+            <div class="serif" style="font-size:24px;font-weight:700">${doneCount}/${total} <span style="font-size:12px;font-weight:400">${H.doses} (${pct}%)</span></div>
+          </div>
+          <button class="btn-bronze" onclick="goScreen(3)">⏰</button>
+        </div>
+
+        ${renderPillboxDial(dev, true)}
+
+        <p style="font-size:10px;opacity:0.75;text-align:center;margin-top:4px">${H.tapHint}</p>
+        <div style="margin-top:8px;padding:7px 10px;background:rgba(0,0,0,0.22);border-radius:12px;font-size:11px;color:#FDE68A;display:flex;align-items:center;gap:6px">
+          <span>🔔</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${H.next} ${loc('พาราเซตามอล 500mg')} (${d.meds.slot} 2 • 08:30)</span>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:8px">${H.list}</div>
+      ${state.meds.map(m => `
+        <div class="card">
+          <div class="flex-between">
+            <div style="min-width:0">
+              <div class="flex-gap">
+                <span style="font-size:13px;font-weight:700;color:var(--primary)">${m.time}</span>
+                <span class="badge badge-gray">${d.meds.slot} ${m.slot}</span>
+              </div>
+              <div style="font-size:14px;font-weight:600;margin-top:3px">${loc(m.name)}</div>
+              <div style="font-size:11px;color:var(--muted)">${loc(m.dose)} • ${loc(m.method)}</div>
+            </div>
+            <span class="badge ${m.status==='done'?'badge-sage':m.status==='open'?'badge-blush':'badge-gray'}">
+              ${m.status==='done' ? '✓ ' + H.done : m.status==='open' ? '● ' + H.open : H.wait}
+            </span>
+          </div>
+          ${m.status==='open' ? `
+            <div class="flex-between" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+              <span style="font-size:10px;color:var(--blush-txt);font-weight:600">Reed: ${m.lidTime}</span>
+              <button class="btn-sm" onclick="confirmMed(${m.id})">${H.confirm}</button>
+            </div>` : ''}
+        </div>
+      `).join('')}`;
+    return;
+  }
+
+  // 2. Medication Management
+  if (state.screen === 2) {
+    const M = d.meds;
+    const editObj = state.editMedId ? state.meds.find(x => x.id === state.editMedId) : { slot: 1, name: '', dose: '', method: '', note: '' };
+    vp.innerHTML = `
+      <div class="flex-between" style="margin-bottom:10px">
+        <h2 class="serif" style="font-size:22px;color:var(--primary)">${M.title}</h2>
+        <button class="btn-sm" onclick="state.editMedId=null;state.medFormOpen=!state.medFormOpen;render()">${M.add}</button>
+      </div>
+
+      ${state.medFormOpen ? `
+        <div class="card" style="border-color:var(--bronze)">
+          <input id="f-name" class="input" placeholder="${M.name}" value="${loc(editObj.name)}" style="margin-bottom:8px">
+          <div class="grid-2" style="margin-bottom:8px">
+            <input id="f-dose" class="input" placeholder="${M.dose}" value="${loc(editObj.dose)}">
+            <select id="f-slot" class="input">${[1,2,3,4,5].map(n => `<option value="${n}" ${editObj.slot===n?'selected':''}>${M.slot} ${n}</option>`).join('')}</select>
+          </div>
+          <input id="f-method" class="input" placeholder="${M.method}" value="${loc(editObj.method)}" style="margin-bottom:8px">
+          <input id="f-note" class="input" placeholder="${M.note}" value="${loc(editObj.note)}" style="margin-bottom:10px">
+          <div class="flex-gap">
+            <button class="btn-primary" onclick="saveMedForm()">${M.save}</button>
+            <button class="btn-outline" style="padding:11px" onclick="state.medFormOpen=false;render()">${M.cancel}</button>
+          </div>
+        </div>
+      ` : ''}
+
+      ${state.meds.map(m => `
+        <div class="card">
+          <div class="flex-between">
+            <div style="min-width:0">
+              <span class="badge badge-sage">${M.slot} ${m.slot}</span>
+              <div style="font-size:14px;font-weight:600;margin-top:4px">${loc(m.name)}</div>
+              <div style="font-size:11px;color:var(--bronze);font-weight:600">${loc(m.dose)} • ${loc(m.method)}</div>
+            </div>
+            <div class="flex-gap">
+              <button class="btn-outline" onclick="state.editMedId=${m.id};state.medFormOpen=true;render()">${M.edit}</button>
+              <button class="btn-outline" style="color:#B91C1C" onclick="deleteMed(${m.id})">${M.del}</button>
+            </div>
+          </div>
+          ${m.note ? `<div style="font-size:11px;color:var(--muted);margin-top:6px;padding-top:6px;border-top:1px solid var(--border)"><strong>${M.note}:</strong> ${loc(m.note)}</div>` : ''}
+        </div>
+      `).join('')}`;
+    return;
+  }
+
+  // 3. Reminder Settings (4-Column Frequency Grid - Zero Overflow)
+  if (state.screen === 3) {
+    const R = d.rem;
+    vp.innerHTML = `
+      <div class="flex-between" style="margin-bottom:10px">
+        <h2 class="serif" style="font-size:21px;color:var(--primary)">${R.title}</h2>
+        <button type="button" class="btn-outline" style="font-size:10px" onclick="triggerTestAlert()">🔔 ${R.testAlert}</button>
+      </div>
+
+      <div class="card">
+        <label class="field-label">${R.med}</label>
+        <select id="rem-med" class="input" style="margin-bottom:10px">
+          ${state.meds.map(m => `<option value="${m.id}" ${state.remForm.medId===m.id?'selected':''}>${d.meds.slot} ${m.slot} — ${loc(m.name)}</option>`).join('')}
+        </select>
+
+        <div class="grid-2" style="margin-bottom:10px">
+          <div>
+            <label class="field-label">${R.time}</label>
+            <input id="rem-time" type="time" class="input" value="${state.remForm.time}">
+          </div>
+          <div>
+            <label class="field-label">${R.adv}</label>
+            <select class="input">
+              ${R.advOpts.map((opt, idx) => `<option ${state.remForm.advIdx===idx?'selected':''}>${opt}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <label class="field-label">${R.perDay}</label>
+        <div class="freq-grid" style="margin-bottom:10px">
+          ${R.freqOpts.map((lbl, idx) => {
+            const val = idx + 1;
+            return `<button type="button" class="freq-btn ${state.remForm.perDay===val?'active':''}" onclick="setFreq(${val})">${lbl}</button>`;
+          }).join('')}
+        </div>
+
+        <label class="field-label">${R.days}</label>
+        <div class="day-grid" style="margin-bottom:12px">
+          ${R.dList.map((dayLbl, i) => `
+            <button type="button" class="day-btn ${state.remForm.days.includes(i)?'active':''}" onclick="toggleDay(${i})">${dayLbl}</button>
+          `).join('')}
+        </div>
+
+        <button type="button" class="btn-primary" onclick="saveReminder()">${R.save}</button>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px">${R.activeList}</div>
+      ${state.reminders.map(r => `
+        <div class="card flex-between">
+          <div style="min-width:0">
+            <div class="serif" style="font-size:20px;font-weight:700;color:var(--primary)">${r.time} <span class="badge badge-bronze" style="font-family:sans-serif">${R.freqOpts[r.perDay-1] || r.perDay+'x'}</span></div>
+            <div style="font-size:12px;font-weight:600;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${loc(r.medName)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">${r.days.map(idx => R.dList[idx]).join(' • ')}</div>
+          </div>
+          <div class="flex-gap" style="flex-shrink:0">
+            <button type="button" class="toggle ${r.enabled?'on':''}" onclick="toggleReminder(${r.id})"></button>
+            <button type="button" class="btn-outline" style="padding:4px 8px;color:#B91C1C" onclick="deleteReminder(${r.id})">✕</button>
+          </div>
+        </div>
+      `).join('')}`;
+    return;
+  }
+
+  // 4. Smart Pillbox Hardware
+  if (state.screen === 4) {
+    const V = d.dev;
+    vp.innerHTML = `
+      <div class="flex-between" style="margin-bottom:10px">
+        <h2 class="serif" style="font-size:22px;color:var(--primary)">${V.title}</h2>
+        <button class="btn-sm" onclick="addDevice()">${V.add}</button>
+      </div>
+
+      <div class="screen-chips" style="margin-bottom:10px">
+        ${state.devices.map((box, i) => `
+          <button class="chip ${state.activeDev===i?'active':''}" onclick="state.activeDev=${i};render();updateClock()">${box.name}</button>
+        `).join('')}
+      </div>
+
+      <div class="hardware-card">
+        <div class="flex-between" style="margin-bottom:6px">
+          <div style="min-width:0">
+            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${dev.name}</div>
+            <div style="font-size:11px;color:#4ADE80;font-weight:600">● ${V.conn}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:10px;opacity:0.75">${V.bat}</div>
+            <div style="font-size:15px;font-weight:700;color:#FDE68A">${dev.bat}%</div>
+          </div>
+        </div>
+        ${renderPillboxDial(dev, true)}
+        <div style="text-align:center;font-size:10px;color:#FDE68A;margin-top:4px">${V.oled} • ESP32-S3</div>
+      </div>
+
+      <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:8px">${V.slots}</div>
+      ${dev.slots.map((sl, idx) => `
+        <div class="card flex-between">
+          <div style="min-width:0">
+            <div class="flex-gap">
+              <span class="badge ${sl.open?'badge-amber':sl.status==='done'?'badge-sage':'badge-gray'}">${d.meds.slot} ${sl.n}</span>
+              <span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${loc(sl.med)}</span>
+            </div>
+            <div style="font-size:11px;color:${sl.open?'#B45309':'var(--muted)'};margin-top:4px;font-weight:${sl.open?'600':'400'}">
+              ${sl.open ? V.lidOpen : V.lidClosed}
+            </div>
+          </div>
+          <button class="${sl.open?'btn-bronze':'btn-outline'}" onclick="toggleLidHardware(${idx})">
+            ${sl.open ? V.closeLid : V.testServo}
+          </button>
+        </div>
+      `).join('')}
+
+      ${state.devices.length > 1 ? `
+        <button class="btn-outline" style="width:100%;color:#B91C1C;padding:11px;font-weight:600;margin-top:4px" onclick="removeDev()">${V.remove}</button>
+      ` : ''}`;
+    return;
+  }
+
+  // 5. History & Adherence
+  if (state.screen === 5) {
+    const H = d.hist;
+    const pastDays = getPastDaysData();
+    const activeDay = pastDays.find(day => day.offset === state.histOffset) || pastDays[pastDays.length - 1];
+    const weeklyAvg = Math.round(pastDays.reduce((acc, day) => acc + day.rate, 0) / pastDays.length);
+
+    const filteredLogs = activeDay.logs.filter(log => {
+      if (state.histFilter === 'ontime') return log.status === 'ontime';
+      if (state.histFilter === 'issue') return log.status === 'late' || log.status === 'missed';
+      return true;
+    });
+
+    vp.innerHTML = `
+      <h2 class="serif" style="font-size:22px;color:var(--primary);margin-bottom:10px">${H.title}</h2>
+
+      <div class="card">
+        <div class="flex-between">
+          <div style="min-width:0">
+            <div style="font-size:11px;color:var(--muted)">${H.rate}</div>
+            <div class="serif" style="font-size:26px;font-weight:700;color:var(--primary)">${weeklyAvg}% <span style="font-size:10px;font-family:sans-serif;color:var(--sage-txt)">• ${H.avgResp}: ${activeDay.avgSec}</span></div>
+          </div>
+          <span class="badge badge-bronze">RTC DS3231</span>
+        </div>
+        <div class="bar-track light">
+          <div class="bar-fill" style="width:${weeklyAvg}%;background:var(--primary)"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:8px">${H.cal}</div>
+        <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;text-align:center;margin-bottom:12px">
+          ${pastDays.map(day => {
+            const isSel = day.offset === state.histOffset;
+            const dotCol = day.rate === 100 ? '#22C55E' : day.logs.some(x => x.status === 'missed') ? '#EF4444' : '#F59E0B';
+            return `
+              <button onclick="state.histOffset=${day.offset};state.selectedTelemetry=null;render()" style="border:1px solid ${isSel?'var(--primary)':'var(--border)'};border-radius:10px;padding:5px 1px;cursor:pointer;background:${isSel?'var(--primary)':'var(--bg)'};color:${isSel?'#fff':'var(--ink)'};min-width:0">
+                <div style="font-size:8px;opacity:0.85;margin-bottom:2px;white-space:nowrap;overflow:hidden">${day.shortDay}</div>
+                <div style="font-size:12px;font-weight:700">${day.dayNum}</div>
+                <div style="width:5px;height:5px;border-radius:50%;margin:3px auto 0;background:${dotCol}"></div>
+              </button>`;
+          }).join('')}
+        </div>
+
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px">${H.chartTitle}</div>
+        <div style="display:flex;align-items:flex-end;gap:5px;height:56px;padding-top:8px;border-top:1px solid var(--border)">
+          ${pastDays.map(day => {
+            const isSel = day.offset === state.histOffset;
+            const barCol = day.rate === 100 ? 'var(--primary)' : day.logs.some(x => x.status === 'missed') ? '#B91C1C' : 'var(--bronze)';
+            return `
+              <div onclick="state.histOffset=${day.offset};state.selectedTelemetry=null;render()" style="flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;cursor:pointer">
+                <span style="font-size:8px;font-weight:700;color:${isSel?'var(--primary)':'var(--muted)'};margin-bottom:2px">${day.rate}%</span>
+                <div style="width:100%;height:${Math.max(day.rate * 0.72, 18)}%;background:${barCol};border-radius:5px 5px 2px 2px;opacity:${isSel?1:0.55};transition:0.2s"></div>
+              </div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--bronze-bg);border-color:rgba(166,138,86,0.35)">
+        <div class="flex-between" style="margin-bottom:4px">
+          <strong style="font-size:12px;color:var(--primary)">${H.log} ${activeDay.fullDate}</strong>
+          <span class="badge ${activeDay.rate===100?'badge-sage':'badge-amber'}">${activeDay.rate}%</span>
+        </div>
+        <div style="font-size:11px;color:var(--ink);margin-bottom:9px">${activeDay.summary[state.lang]}</div>
+        <div class="pill-group" style="background:#fff">
+          <button class="pill-btn ${state.histFilter==='all'?'active':''}" onclick="state.histFilter='all';render()">${H.filterAll} (${activeDay.logs.length})</button>
+          <button class="pill-btn ${state.histFilter==='ontime'?'active':''}" onclick="state.histFilter='ontime';render()">${H.filterOn}</button>
+          <button class="pill-btn ${state.histFilter==='issue'?'active':''}" onclick="state.histFilter='issue';render()">${H.filterIssue}</button>
+        </div>
+      </div>
+
+      ${filteredLogs.map((s, idx) => {
+        const badgeCls = s.status === 'ontime' ? 'badge-sage' : s.status === 'late' ? 'badge-amber' : 'badge-blush';
+        const badgeTxt = s.status === 'ontime' ? '✓ ' + H.onTime : s.status === 'late' ? '⏰ ' + H.late : '✕ ' + H.missed;
+        const isExpanded = state.selectedTelemetry === idx;
+        return `
+          <div class="card" style="cursor:pointer;border-color:${isExpanded?'var(--bronze)':'var(--border)'}" onclick="state.selectedTelemetry=${isExpanded?'null':idx};render()">
+            <div class="flex-between">
+              <div style="min-width:0">
+                <div class="flex-gap">
+                  <span style="font-size:13px;font-weight:700;color:var(--primary)">${s.sched}</span>
+                  <span class="badge badge-gray">${d.meds.slot} ${s.slot}</span>
+                </div>
+                <div style="font-size:13px;font-weight:600;margin-top:3px">${loc(s.med)} <span style="font-size:11px;font-weight:400;color:var(--muted)">(${loc(s.dose)})</span></div>
+              </div>
+              <span class="badge ${badgeCls}">${badgeTxt}</span>
+            </div>
+
+            <div style="font-size:11px;color:var(--muted);margin-top:6px;background:var(--bg);padding:6px 9px;border-radius:10px">
+              ${s.note[state.lang]}
+            </div>
+
+            <div class="grid-2" style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)">
+              <div>${H.lidAt} <strong style="color:var(--ink)">${s.lid}</strong></div>
+              <div>${H.eatAt} <strong style="color:var(--primary)">${s.eat}</strong></div>
+            </div>
+
+            ${isExpanded ? `
+              <div style="margin-top:8px;padding:8px 10px;background:#182B26;color:#fff;border-radius:12px;font-size:10px">
+                <div style="color:#FDE68A;font-weight:700;margin-bottom:4px">${H.telemetryTitle}</div>
+                <div class="grid-2" style="gap:4px">
+                  <div>• Reed Duration: <strong>${s.telemetry.dur}</strong></div>
+                  <div>• Servo Angle: <strong>${s.telemetry.servo}</strong></div>
+                  <div>• RTC Temp: <strong>${s.telemetry.rtc}</strong></div>
+                  <div>• Caregiver: <strong>${s.telemetry.caregiver}</strong></div>
+                </div>
+              </div>
+            ` : ''}
+          </div>`;
+      }).join('')}`;
+    return;
+  }
+
+  // 6. Family & Caregivers (Inline Edit)
+  if (state.screen === 6) {
+    const F = d.fam;
+    vp.innerHTML = `
+      <div class="flex-between" style="margin-bottom:10px">
+        <div style="min-width:0">
+          <h2 class="serif" style="font-size:21px;color:var(--primary)">${F.title}</h2>
+          <p style="font-size:11px;color:var(--bronze);font-weight:500">✎ ${F.hint}</p>
+        </div>
+        <button class="btn-sm" onclick="addCaregiver()">${F.add}</button>
+      </div>
+
+      ${state.caregivers.map(c => state.editCgId === c.id ? `
+        <div class="card" style="border-color:var(--bronze)">
+          <input id="cg-n-${c.id}" class="input" value="${c.name}" style="margin-bottom:6px;font-weight:600">
+          <input id="cg-r-${c.id}" class="input" value="${c.role}" style="margin-bottom:8px;font-size:12px">
+          <div class="flex-between">
+            <select id="cg-p-${c.id}" class="input" style="width:auto;margin:0;padding:6px">
+              <option value="view" ${c.perm==='view'?'selected':''}>${F.view}</option>
+              <option value="edit" ${c.perm==='edit'?'selected':''}>${F.edit}</option>
+            </select>
+            <button class="btn-sm" onclick="saveCg(${c.id})">${F.save}</button>
+          </div>
+        </div>
+      ` : `
+        <div class="card flex-between" style="cursor:pointer" onclick="state.editCgId=${c.id};render()">
+          <div style="min-width:0">
+            <div style="font-size:14px;font-weight:600">${c.name} <span style="color:var(--bronze);font-size:12px">✎</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px">${c.role}</div>
+            <span class="badge badge-gray" style="margin-top:6px">${F.perm} ${c.perm==='edit'?F.edit:F.view}</span>
+          </div>
+          <button class="btn-outline" style="color:#B91C1C" onclick="event.stopPropagation();state.caregivers=state.caregivers.filter(x=>x.id!==${c.id});render()">✕</button>
+        </div>
+      `).join('')}
+
+      <div class="card">
+        <div class="flex-between" style="margin-bottom:12px">
+          <span style="font-size:12px;font-weight:500">${F.share}</span>
+          <button class="toggle ${state.famShare?'on':''}" onclick="state.famShare=!state.famShare;render()"></button>
+        </div>
+        <div class="flex-between">
+          <span style="font-size:12px;font-weight:500">${F.alert}</span>
+          <button class="toggle ${state.famAlert?'on':''}" onclick="state.famAlert=!state.famAlert;render()"></button>
+        </div>
+      </div>`;
+    return;
+  }
+
+  // 7. Settings
+  if (state.screen === 7) {
+    const S = d.set;
+    vp.innerHTML = `
+      <h2 class="serif" style="font-size:22px;color:var(--primary);margin-bottom:10px">${S.title}</h2>
+      <div class="card">
+        <div class="flex-between">
+          <div class="flex-gap" style="min-width:0">
+            <div style="width:44px;height:44px;border-radius:14px;background:${state.avatarColor};color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0" class="serif">NM</div>
+            <div style="min-width:0">
+              <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${S.name}</div>
+              <div style="font-size:11px;color:var(--muted)">Nutdhavuth Meechaiyo@lamduan.mfu.ac.th</div>
+            </div>
+          </div>
+          <button class="btn-outline" onclick="state.editProfile=!state.editProfile;render()">${d.meds.edit}</button>
+        </div>
+        ${state.editProfile ? `
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border)">
+            <input id="prof-in" class="input" value="${S.name}" style="margin-bottom:8px">
+            <div class="flex-between">
+              <div class="flex-gap">
+                ${['#1E352F','#A68A56','#475569'].map(c => `<button onclick="state.avatarColor='${c}';render()" style="width:26px;height:26px;border-radius:8px;background:${c};border:none;cursor:pointer"></button>`).join('')}
+              </div>
+              <button class="btn-sm" onclick="T[state.lang].set.name=document.getElementById('prof-in').value;state.editProfile=false;render()">${d.fam.save}</button>
+            </div>
+          </div>
+        ` : ''}
+      </div>
+
+      <div class="card" style="padding:4px 13px">
+        <div class="flex-between" style="padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="state.editPassword=!state.editPassword;render()">
+          <span style="font-size:12px;font-weight:600">${S.pass}</span><span style="color:var(--muted)">${state.editPassword ? '⌄' : '›'}</span>
+        </div>
+        ${state.editPassword ? `
+          <div style="padding:10px 0 12px;border-bottom:1px solid var(--border)">
+            <input id="pw-old" class="input" type="password" placeholder="${S.oldPass}" style="margin-bottom:6px;font-size:12px">
+            <input id="pw-new" class="input" type="password" placeholder="${S.newPass}" style="margin-bottom:6px;font-size:12px">
+            <input id="pw-conf" class="input" type="password" placeholder="${S.confPass}" style="margin-bottom:8px;font-size:12px">
+            <div class="flex-gap">
+              <button type="button" class="btn-sm" style="flex:1;padding:8px" onclick="saveNewPassword()">${S.savePass}</button>
+              <button type="button" class="btn-outline" style="padding:8px" onclick="state.editPassword=false;render()">${d.meds.cancel}</button>
+            </div>
+          </div>
+        ` : ''}
+        <div class="flex-between" style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:12px">${S.lang}</span>
+          <div class="pill-group">
+            <button class="pill-btn ${state.lang==='th'?'active':''}" onclick="setLang('th')">ไทย</button>
+            <button class="pill-btn ${state.lang==='en'?'active':''}" onclick="setLang('en')">EN</button>
+            <button class="pill-btn ${state.lang==='zh'?'active':''}" onclick="setLang('zh')">中文</button>
+          </div>
+        </div>
+        <div class="flex-between" style="padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="min-width:0">
+            <div style="font-size:12px">${S.sound}</div>
+            <div style="font-size:10px;color:var(--bronze)">${S.soundType}</div>
+          </div>
+          <button class="toggle ${state.setSound?'on':''}" onclick="state.setSound=!state.setSound;render()"></button>
+        </div>
+        <div class="flex-between" style="padding:10px 0">
+          <span style="font-size:12px">${S.priv}</span>
+          <button class="toggle ${state.setPriv?'on':''}" onclick="state.setPriv=!state.setPriv;render()"></button>
+        </div>
+      </div>
+
+      <button class="btn-outline" style="width:100%;color:#B91C1C;padding:11px;font-weight:600" onclick="goScreen(0)">${S.out}</button>`;
+  }
+}
+
+function render() {
+  renderTopChips();
+  renderBottomNav();
+  renderScreen();
+}
+
+render();
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+</body>
+</html>
